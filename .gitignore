@@ -1,0 +1,8 @@
+# Virtual environment
+venv/
+__pycache__/
+
+# Logs & cache
+*.log
+*.pyc
+*.pyo
