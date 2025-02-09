@@ -5,6 +5,7 @@ import random
 import string
 import os
 import pymysql
+import json
 pymysql.install_as_MySQLdb()
 
 # Replace these with your RDS connection details
@@ -25,9 +26,20 @@ foreign_and_dep_keys = {
     
     # Add your foreign key columns and lists of possible values
     }
-    
+
+def readJson(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            config = json.load(file)
+        return (config)
+    except FileNotFoundError:
+        print("Config file not found.")
+    except json.JSONDecodeError:
+        print("Error decoding JSON.")
+
+
 # Function to generate fake data based on column data types
-def generate_fake_data(data_types, foreign_keys, batch_size):
+def generate_fake_data(data_types, foreign_keys, batch_size,config):
     fake = Faker()
     generated_data = {}
 
@@ -38,11 +50,27 @@ def generate_fake_data(data_types, foreign_keys, batch_size):
         if 'auto_increment' in data_type.lower() and 'primary key' in data_type.lower():
             continue
 
+        if column.lower() == 'empname':
+            generated_data[column]=[random.choice(config["name"]) + ' ' + random.choice(config["name"])]
+            continue
+
+        if column.lower() == 'manager':
+            generated_data[column]=[random.choice(config["name"]) + ' ' + random.choice(config["name"])]
+            continue
+
+        if column.lower() == 'dept':
+            generated_data[column]=[random.choice(config["dept"])]
+            continue
+
+        if column.lower() == 'designation':
+            generated_data[column]=[random.choice(config["designation"])]
+            continue
+
         if column in foreign_keys:
             generated_data[column] = [random.choice(foreign_keys[column]) for _ in range(batch_size)]
         elif 'smallint' in data_type.lower():
             # Generate a wider range of random integers for SMALLINT
-            generated_data[column] = [random.randint(-32768, 32767) for _ in range(batch_size)]  # Adjust the range as needed for SMALLINT
+            c= [random.randint(-32768, 32767) for _ in range(batch_size)]  # Adjust the range as needed for SMALLINT
         elif 'tinyint' in data_type.lower() and '1' in data_type.lower():
             # Generate random boolean-like values for TINYINT(1)
             generated_data[column] = [random.choice([0, 1]) for _ in range(batch_size)]
@@ -225,10 +253,11 @@ batch_size = 1  # Example: 5000 rows per batch
 # Number of rows to generate (adjust as needed)
 num_rows = 2  # Example: generate 500,000 rows
 
+config = readJson("./config.json")
 # Generate and insert data in batches
 for i in range(0, num_rows, batch_size):
     # Generate fake data based on column data types, excluding auto-incremented primary keys
-    generated_data = generate_fake_data(column_data_types, foreign_keys, batch_size)
+    generated_data = generate_fake_data(column_data_types, foreign_keys, batch_size, config)
 
     # Convert the generated data to a DataFrame
     df_data = pd.DataFrame(generated_data)
